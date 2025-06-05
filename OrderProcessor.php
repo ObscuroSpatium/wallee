@@ -1,34 +1,59 @@
 <?php
 
 class OrderProcessor {
-    public function processOrders($orders) {
+    public function processOrders($orders):void {
         foreach ($orders as $order) {
             if ($order['status'] == 'pending') {
-                $total = 0;
-                foreach ($order['items'] as $item) {
-                    $total += $item['price'] * $item['quantity'];
-                }
-                
-                if ($total > 100) {
-                    $discount = $total * 0.1;
-                } else {
-                    $discount = 0;
-                }
-
-                $finalTotal = $total - $discount;
-                
-                if ($order['customer_type'] == 'vip') {
-                    $finalTotal *= 0.9;
-                }
-
-                $this->sendEmail($order['customer_email'], "Your order total: $" . $finalTotal);
+                $this->sendEmail($order);
             }
         }
     }
 
-    private function sendEmail($email, $message) {
-        // Simulating email sending
-        echo "Sending email to $email: $message\n";
+    private function getOrderTotal($order):float
+    {
+        $total = 0;
+
+        if (!sizeof($order['items']))
+            return $total;
+
+        foreach ($order['items'] as $item) {
+            $total += $item['price'] * $item['quantity'];
+        }
+
+        $this->calculateDiscount($order, $total);
+
+        return $total;
+    }
+
+    private function calculateDiscount($order, &$total):void
+    {
+        if ($total > 100) {
+            $total *= 1 - 0.1;
+        }
+
+        switch ($order['customer_type'])
+        {
+            case 'vip':
+            {
+                $total *= 0.9;
+            }
+            case 'regular':
+            {
+                $total *= 1;
+            }
+            default :
+            {
+                $total *= 1;
+            }
+        }
+    }
+
+    private function sendEmail($order):void {
+        if ($total = $this->getOrderTotal($order)) {
+            $message = 'Your total is ' . $total . '$';
+            // Simulating email sending
+            echo "Sending email to \"" . $order['customer_email'] . "\": $message\n";
+        }
     }
 }
 
